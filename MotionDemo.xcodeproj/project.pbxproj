@@ -424,6 +424,7 @@
 				44F85CDE1B3BF631001C473D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		44F85CDF1B3BF631001C473D /* Build configuration list for PBXNativeTarget "MotionDemoTests" */ = {
 			isa = XCConfigurationList;
@@ -432,6 +433,7 @@
 				44F85CE11B3BF631001C473D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

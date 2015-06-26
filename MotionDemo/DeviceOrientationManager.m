@@ -10,10 +10,13 @@
 #import <UIKit/UIKit.h>
 #import <CoreMotion/CoreMotion.h>
 
+#define GravityBalance 0.3f
+#define AccelerometerRate 1.5f
+
 @interface DeviceOrientationManager ()
 
 @property (nonatomic, weak)id<DeviceOrientationManagerDelegate>delegate;
-@property (nonatomic, assign)DeviceOrientationStatus orientation;
+@property (nonatomic, assign)DeviceOrientationStatus currentOrientation;
 @property (nonatomic, strong)CMMotionManager *motionManager;
 
 @end
@@ -23,46 +26,61 @@
 - (instancetype)initWithDelegate:(id<DeviceOrientationManagerDelegate>)delegate{
     if (self = [super init]) {
         self.delegate = delegate;
-        self.orientation = DeviceOrientationStatus_Unknown;
+        self.currentOrientation = DeviceOrientationStatus_UnInit;
         self.motionManager = [[CMMotionManager alloc] init];
-        self.motionManager.deviceMotionUpdateInterval = 0.5;
+        self.motionManager.accelerometerUpdateInterval = 0.1;
         [self.motionManager startDeviceMotionUpdates];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(orientationChanged:) name:UIDeviceOrientationDidChangeNotification object:nil];
+        
+        __weak typeof(self) weakSelf = self;
+        [self.motionManager startAccelerometerUpdatesToQueue:[NSOperationQueue currentQueue] withHandler:^(CMAccelerometerData *accelerometerData, NSError *error) {
+            double accelerometerX = accelerometerData.acceleration.x;
+            double accelerometerY = accelerometerData.acceleration.y;
+            double accelerometerZ = accelerometerData.acceleration.z;
+            double gravityX = weakSelf.motionManager.deviceMotion.gravity.x;
+            double gravityY = weakSelf.motionManager.deviceMotion.gravity.y;
+            double gravityZ = weakSelf.motionManager.deviceMotion.gravity.z;
+            
+            DeviceOrientationStatus orientation = weakSelf.currentOrientation;
+            
+            if (fabs(gravityX)+GravityBalance > 1.0f && fabs(gravityY) < GravityBalance && fabs(gravityZ) < GravityBalance) {
+                orientation = DeviceOrientationStatus_Landscape;
+            }
+            else if (fabs(gravityX)+GravityBalance > 1.0f && fabs(gravityY) > GravityBalance && fabs(gravityZ) < GravityBalance) {
+                //gravityX大于0代表面朝设备，home键在左侧；gravityX小于0代表面朝设备，home键在右侧
+                if (gravityX > 0) {
+                    if (gravityY < 0) {
+                        orientation = DeviceOrientationStatus_LandscapeLeft;
+                    }else{
+                        orientation = DeviceOrientationStatus_LandscapeRight;
+                    }
+                }else{
+                    if (gravityY < 0) {
+                        orientation = DeviceOrientationStatus_LandscapeRight;
+                    }else{
+                        orientation = DeviceOrientationStatus_LandscapeLeft;
+                    }
+                }
+            }
+            else if (fabs(gravityX) < GravityBalance && fabs(gravityY) < GravityBalance && gravityZ+GravityBalance > 1.0f) {
+                orientation = DeviceOrientationStatus_FaceUp;
+            }
+            else{
+                if (fabs(accelerometerX) > AccelerometerRate || fabs(accelerometerY) > AccelerometerRate || fabs(accelerometerZ) > AccelerometerRate) {
+                    orientation = DeviceOrientationStatus_Shake;
+                }else{
+                    orientation = DeviceOrientationStatus_Unknown;
+                }
+            }
+            
+            if (self.currentOrientation != orientation) {
+                self.currentOrientation = orientation;
+                if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(deviceOrientationDidChanged:)]) {
+                    [weakSelf.delegate deviceOrientationDidChanged:orientation];
+                }
+            }
+        }];
     }
     return self;
-}
-
-- (void)orientationChanged:(NSNotification *)notification {
-    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
-    switch (deviceOrientation) {
-        case UIDeviceOrientationUnknown:
-            self.orientation = DeviceOrientationStatus_Unknown;
-            break;
-            
-        case UIDeviceOrientationLandscapeLeft:
-        case UIDeviceOrientationLandscapeRight:
-            [self confirmOrientationWithDeviceOrientation:deviceOrientation];
-            break;
-            
-        case UIDeviceOrientationFaceUp:
-            self.orientation = DeviceOrientationStatus_FaceUp;
-            break;
-            
-        default:
-            self.orientation = DeviceOrientationStatus_Unknown;
-            break;
-    }
-
-    if (self.delegate && [self.delegate respondsToSelector:@selector(deviceOrientationDidChanged:)]) {
-        [self.delegate deviceOrientationDidChanged:self.orientation];
-    }
-}
-
-- (void)confirmOrientationWithDeviceOrientation:(UIDeviceOrientation)deviceOrientation{
-    [self.motionManager startDeviceMotionUpdatesToQueue:[NSOperationQueue currentQueue] withHandler:^(CMDeviceMotion *motion, NSError *error) {
-        NSLog(@"三轴: x: %f y: %f z: %f", motion.gravity.x, motion.gravity.y, motion.gravity.z);
-    }];
-
 }
 
 - (void)dealloc{

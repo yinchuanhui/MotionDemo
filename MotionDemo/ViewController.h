@@ -11,6 +11,7 @@
 
 @interface ViewController : UIViewController <DeviceOrientationManagerDelegate>
 
+@property (weak, nonatomic) IBOutlet UILabel *infoLabel;
 
 @end
 

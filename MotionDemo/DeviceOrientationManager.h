@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 
 typedef enum {
+    DeviceOrientationStatus_UnInit,//设备状态未初始化（未被监控）
     DeviceOrientationStatus_Unknown,//未知，下面四种状态之外的状态都是未知状态
     DeviceOrientationStatus_Landscape,//手机水平放置，屏幕与地面垂直
     DeviceOrientationStatus_LandscapeLeft,//屏幕与地面垂直，面对屏幕向左倾斜

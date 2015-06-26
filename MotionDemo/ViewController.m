@@ -62,26 +62,32 @@
 #pragma mark - Handle Orientation Event
 
 - (void)orientationUnknow{
+    self.infoLabel.text = @"unknow";
     NSLog(@"===============unknow");
 }
 
 - (void)orientationLandscape{
+    self.infoLabel.text = @"landscape";
     NSLog(@"===============landscape");
 }
 
 - (void)orientationLandscapeLeft{
+    self.infoLabel.text = @"landscape left";
     NSLog(@"===============landscape left");
 }
 
 - (void)orientationLandscapeRight{
+    self.infoLabel.text = @"landscape right";
     NSLog(@"===============landscape right");
 }
 
 - (void)orientationFaceUp{
+    self.infoLabel.text = @"face up";
     NSLog(@"===============face up");
 }
 
 - (void)orientationShake{
+    self.infoLabel.text = @"shake";
     NSLog(@"===============shake");
 }
 
